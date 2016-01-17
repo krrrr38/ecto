@@ -646,6 +646,20 @@ defmodule Ecto.Adapters.PostgresTest do
     """ |> remove_newlines
   end
 
+  test "alter table with position condition" do
+    assert_raise ArgumentError, "PostgreSQL adapter does not support column position options", fn ->
+      alter = {:alter, table(:posts),
+                 [{:add, :title, :string, [default: "Untitled", size: 100, null: false, first: true]}]}
+      SQL.execute_ddl(alter)
+    end
+
+    assert_raise ArgumentError, "PostgreSQL adapter does not support column position options", fn ->
+      alter = {:alter, table(:posts),
+                 [{:add, :author_id, references(:author), [after: :title]}]}
+      SQL.execute_ddl(alter)
+    end
+  end
+
   test "create index" do
     create = {:create, index(:posts, [:category_id, :permalink])}
     assert SQL.execute_ddl(create) ==
