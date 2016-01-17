@@ -543,19 +543,20 @@ defmodule Ecto.Adapters.MySQLTest do
 
   test "alter table" do
     alter = {:alter, table(:posts),
-               [{:add, :title, :string, [default: "Untitled", size: 100, null: false]},
-                {:add, :author_id, references(:author), []},
-                {:modify, :price, :numeric, [precision: 8, scale: 2, null: true]},
-                {:modify, :cost, :integer, [null: false, default: nil]},
+               [{:add, :title, :string, [default: "Untitled", size: 100, null: false, first: true]},
+                {:add, :author_id, references(:author), [after: :title]},
+                {:modify, :price, :numeric, [precision: 8, scale: 2, null: true, first: true]},
+                {:modify, :cost, :integer, [null: false, default: nil, after: :price]},
                 {:modify, :permalink_id, references(:permalinks), null: false},
                 {:remove, :summary}]}
 
     assert SQL.execute_ddl(alter) == """
-    ALTER TABLE `posts` ADD `title` varchar(100) DEFAULT 'Untitled' NOT NULL,
-    ADD `author_id` BIGINT UNSIGNED ,
+    ALTER TABLE `posts` ADD `title` varchar(100) DEFAULT 'Untitled' NOT NULL FIRST,
+    ADD `author_id` BIGINT UNSIGNED AFTER `title` ,
     ADD CONSTRAINT `posts_author_id_fkey` FOREIGN KEY (`author_id`) REFERENCES `author`(`id`),
-    MODIFY `price` numeric(8,2) NULL, MODIFY `cost` integer DEFAULT NULL NOT NULL,
-    MODIFY `permalink_id` BIGINT UNSIGNED NOT NULL ,
+    MODIFY `price` numeric(8,2) NULL FIRST,
+    MODIFY `cost` integer DEFAULT NULL NOT NULL AFTER `price`,
+    MODIFY `permalink_id` BIGINT UNSIGNED NOT NULL  ,
     ADD CONSTRAINT `posts_permalink_id_fkey` FOREIGN KEY (`permalink_id`) REFERENCES `permalinks`(`id`),
     DROP `summary`
     """ |> remove_newlines
@@ -567,9 +568,9 @@ defmodule Ecto.Adapters.MySQLTest do
                 {:modify, :permalink_id, references(:permalinks), null: false}]}
 
     assert SQL.execute_ddl(alter) == """
-    ALTER TABLE `foo`.`posts` ADD `author_id` BIGINT UNSIGNED ,
+    ALTER TABLE `foo`.`posts` ADD `author_id` BIGINT UNSIGNED  ,
     ADD CONSTRAINT `posts_author_id_fkey` FOREIGN KEY (`author_id`) REFERENCES `foo`.`author`(`id`),
-    MODIFY `permalink_id` BIGINT UNSIGNED NOT NULL ,
+    MODIFY `permalink_id` BIGINT UNSIGNED NOT NULL  ,
     ADD CONSTRAINT `posts_permalink_id_fkey` FOREIGN KEY (`permalink_id`) REFERENCES `foo`.`permalinks`(`id`)
     """ |> remove_newlines
   end

@@ -683,9 +683,15 @@ if Code.ensure_loaded?(Postgrex) do
     end
 
     defp column_options(type, opts) do
-      default = Keyword.fetch(opts, :default)
-      null    = Keyword.get(opts, :null)
-      pk      = Keyword.get(opts, :primary_key)
+      default        = Keyword.fetch(opts, :default)
+      null           = Keyword.get(opts, :null)
+      pk             = Keyword.get(opts, :primary_key)
+      first          = Keyword.get(opts, :first)
+      after_column   = Keyword.get(opts, :after)
+
+      if first || after_column do
+        error!(nil, "PostgreSQL adapter does not support column position options")
+      end
 
       [default_expr(default, type), null_expr(null), pk_expr(pk)]
     end

@@ -568,22 +568,24 @@ if Code.ensure_loaded?(Mariaex.Connection) do
 
     defp column_change(table, {:add, name, %Reference{} = ref, opts}) do
       assemble(["ADD", quote_name(name), reference_column_type(ref.type, opts),
-                column_options(name, opts), constraint_expr(ref, table, name)])
+                column_options(name, opts), column_position_options(name, opts),
+                constraint_expr(ref, table, name)])
     end
 
     defp column_change(_table, {:add, name, type, opts}) do
-      assemble(["ADD", quote_name(name), column_type(type, opts), column_options(name, opts)])
+      assemble(["ADD", quote_name(name), column_type(type, opts),
+                column_options(name, opts), column_position_options(name, opts)])
     end
 
     defp column_change(table, {:modify, name, %Reference{} = ref, opts}) do
-      assemble([
-        "MODIFY", quote_name(name), reference_column_type(ref.type, opts),
-        column_options(name, opts), constraint_expr(ref, table, name)
-      ])
+      assemble(["MODIFY", quote_name(name), reference_column_type(ref.type, opts),
+                column_options(name, opts), column_position_options(name, opts),
+                constraint_expr(ref, table, name)])
     end
 
     defp column_change(_table, {:modify, name, type, opts}) do
-      assemble(["MODIFY", quote_name(name), column_type(type, opts), column_options(name, opts)])
+      assemble(["MODIFY", quote_name(name), column_type(type, opts),
+                column_options(name, opts), column_position_options(name, opts)])
     end
 
     defp column_change(_table, {:remove, name}), do: "DROP #{quote_name(name)}"
@@ -595,6 +597,17 @@ if Code.ensure_loaded?(Mariaex.Connection) do
 
       [default_expr(default), null_expr(null), pk_expr(pk, name)]
     end
+
+    defp column_position_options(name, opts) do
+      first        = Keyword.get(opts, :first)
+      after_column = Keyword.get(opts, :after)
+
+      [position_expr(first, after_column)]
+    end
+
+    defp position_expr(true, _), do: "FIRST"
+    defp position_expr(_, nil), do: ""
+    defp position_expr(_, after_column) when is_atom(after_column), do: "AFTER #{quote_name(after_column)}"
 
     defp pk_expr(true, name), do: ", PRIMARY KEY(#{quote_name(name)})"
     defp pk_expr(_, _), do: []
